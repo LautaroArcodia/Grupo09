@@ -41,5 +41,143 @@ GO
 
 CREATE DATABASE Com5600G09
 GO
+---------------------
 
--- Pruebaaaaaa
+USE Com5600G09
+GO
+
+--Crear esquemas para las tablas
+
+IF EXISTS (SELECT * 
+			FROM INFORMATION_SCHEMA.TABLES 
+			WHERE TABLE_SCHEMA = 'ddbba')
+	DROP SCHEMA ddbba;
+GO
+
+CREATE SCHEMA ddbba;
+GO
+
+--Crear tablas en schemas
+
+-- Sucursal
+
+IF EXISTS (SELECT * 
+			FROM INFORMATION_SCHEMA.TABLES 
+			WHERE TABLE_SCHEMA = 'ddbba'
+			AND TABLE_NAME = 'Sucursales')
+	DROP TABLE ddbba.Sucursales;
+GO
+
+BEGIN
+	CREATE TABLE ddbba.Sucursales (
+		ID INT PRIMARY KEY IDENTITY,
+		Nombre VARCHAR(50) UNIQUE,
+		Ciudad VARCHAR(50),
+		Direccion VARCHAR(100),
+		Horario VARCHAR(50),
+		Telefono CHAR(20)
+	)
+END
+GO
+
+-- Empleados
+
+IF EXISTS (SELECT * 
+			FROM INFORMATION_SCHEMA.TABLES 
+			WHERE TABLE_SCHEMA = 'ddbba'
+			AND TABLE_NAME = 'Empleados')
+	DROP TABLE ddbba.Empleados;
+GO
+
+BEGIN
+	CREATE TABLE ddbba.Empleados (
+		Legajo INT PRIMARY KEY,
+		Nombre NVARCHAR(100),
+		Apellido NVARCHAR(100),
+		Dni INT UNIQUE NOT NULL,
+		Direccion NVARCHAR(100),
+		EmailPersonal NVARCHAR(100),
+		EmailEmpresa NVARCHAR(100),
+		Cuil NVARCHAR(50),
+		Cargo NVARCHAR(50) NOT NULL,
+		SucursalID INT,
+		Turno NVARCHAR(30) NOT NULL,
+		CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES ddbba.Sucursales(ID)
+	)
+END
+GO
+
+-- Medios de pago
+
+IF EXISTS (SELECT * 
+			FROM INFORMATION_SCHEMA.TABLES 
+			WHERE TABLE_SCHEMA = 'ddbba'
+			AND TABLE_NAME = 'MediosDePago')
+	DROP TABLE ddbba.MediosDePago;
+GO
+
+BEGIN
+	CREATE TABLE ddbba.MediosDePago (
+		ID INT PRIMARY KEY IDENTITY,
+		Nombre VARCHAR(50) NOT NULL,
+		Descripcion VARCHAR(100) NOT NULL
+	)
+END
+GO
+
+-- Productos
+
+IF EXISTS (SELECT * 
+			FROM INFORMATION_SCHEMA.TABLES 
+			WHERE TABLE_SCHEMA = 'ddbba'
+			AND TABLE_NAME = 'Productos')
+	DROP TABLE ddbba.Productos;
+GO
+
+BEGIN
+	CREATE TABLE ddbba.Productos (
+		Id CHAR(10) NOT NULL,
+		CodProducto AS CONVERT(VARCHAR(40), HASHBYTES('SHA1', ISNULL(Id, '') + ISNULL(Nombre, '') + ISNULL(Categoria, '') + ISNULL(Origen, '')), 2) PERSISTED PRIMARY KEY,
+		Nombre VARCHAR(100) NOT NULL,
+		Categoria VARCHAR(50) NOT NULL,
+		Proveedor VARCHAR(50),
+		CantPorUnidad VARCHAR(50),
+		Precio DECIMAL(10,2) NOT NULL,
+		PrecioRef DECIMAL(10,2),
+		Moneda CHAR(10),
+		UnidadRef CHAR(10),
+		Fecha DATETIME DEFAULT GETDATE(),
+		Origen VARCHAR(50) NOT NULL
+	)
+END
+GO
+
+-- Ventas
+
+IF EXISTS (SELECT * 
+           FROM INFORMATION_SCHEMA.TABLES 
+           WHERE TABLE_SCHEMA = 'ddbba' 
+		   AND TABLE_NAME = 'Ventas')
+    DROP TABLE ddbba.Ventas;
+GO
+
+CREATE TABLE ddbba.Ventas (
+    FacturaId VARCHAR(50) PRIMARY KEY NOT NULL,
+    TipoFactura CHAR(1) NOT NULL,
+    Ciudad VARCHAR(50),
+    TipoCliente VARCHAR(20),
+    Genero CHAR(6),
+    Producto VARCHAR(100) NOT NULL,
+    PrecioUnitario DECIMAL(10, 2) NOT NULL,
+    Cantidad INT NOT NULL,
+    Fecha DATE NOT NULL,
+    Hora TIME NOT NULL,
+    MedioPagoID INT NOT NULL,
+    EmpleadoID INT NOT NULL,
+	ProductoID VARCHAR(40) NOT NULL,
+    IdentificadorPago NVARCHAR(30),
+    CONSTRAINT FK_Ventas_MedioPago FOREIGN KEY (MedioPagoID) REFERENCES ddbba.MediosDePago(ID),
+    CONSTRAINT FK_Ventas_Empleado FOREIGN KEY (EmpleadoID) REFERENCES ddbba.Empleados(Legajo),
+	CONSTRAINT FK_Ventas_Productos FOREIGN KEY (ProductoID) REFERENCES ddbba.Productos(CodProducto)
+);
+GO
