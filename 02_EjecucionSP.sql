@@ -12,6 +12,8 @@ BEGIN TRY
 	 EXEC ddbba.InsertarElectronicosEnProductos @RutaArchivo = 'Electronic accessories.xlsx';
 
 	 EXEC ddbba.InsertarImportadosEnProductos @RutaArchivo = 'Productos_importados.xlsx';
+
+	 EXEC ddbba.InsertarMediosDePago @RutaArchivo = 'Informacion_complementaria.xlsx';
 	
 	COMMIT TRANSACTION
 END TRY

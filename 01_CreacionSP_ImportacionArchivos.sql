@@ -419,7 +419,6 @@ BEGIN
 END;
 GO
 
-
 -- Insertar productos importados
 
 CREATE OR ALTER PROCEDURE ddbba.InsertarImportadosEnProductos
@@ -519,3 +518,79 @@ END;
 GO
 
 ----------------------------------------------------------
+
+-- insertar medios de pago
+
+CREATE OR ALTER PROCEDURE ddbba.InsertarMediosDePago
+    @RutaArchivo NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        DROP TABLE IF EXISTS #TempMediosPago;
+
+        CREATE TABLE #TempMediosPago (
+            Nombre VARCHAR(50),
+            Descripcion VARCHAR(100)
+        );
+
+        DECLARE @sql NVARCHAR(MAX);
+        SET @sql = N'
+        INSERT INTO #TempMediosPago (Nombre, Descripcion)
+        SELECT 
+            F2 AS Nombre, 
+            F3 AS Descripcion
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'', 
+            ''Excel 12.0;Database=' + @RutaArchivo + N';HDR=NO'',
+            ''SELECT * FROM [medios de pago$]''
+        ) AS ExcelData
+        WHERE F2 IS NOT NULL AND F3 IS NOT NULL;';
+
+        EXEC sp_executesql @sql;
+
+        CREATE TABLE #TempAccionMerge (
+            Action NVARCHAR(10)
+        );
+
+        MERGE INTO ddbba.MediosDePago AS MP
+        USING (
+            SELECT Nombre, Descripcion FROM #TempMediosPago
+        ) AS Temp
+        ON MP.Nombre = Temp.Nombre
+
+        WHEN MATCHED AND MP.Descripcion <> Temp.Descripcion THEN
+            UPDATE SET
+                MP.Descripcion = Temp.Descripcion
+
+        WHEN NOT MATCHED THEN
+            INSERT (Nombre, Descripcion)
+            VALUES (Temp.Nombre, Temp.Descripcion)
+        
+        OUTPUT $action INTO #TempAccionMerge;
+
+        DECLARE @FilasInsertadas INT = (SELECT COUNT(*) FROM #TempAccionMerge WHERE Action = 'INSERT');
+        DECLARE @FilasActualizadas INT = (SELECT COUNT(*) FROM #TempAccionMerge WHERE Action = 'UPDATE');
+        DECLARE @FilasOmitidas INT = (SELECT COUNT(*) FROM #TempMediosPago) - (@FilasInsertadas + @FilasActualizadas);
+
+        PRINT 'Proceso completado para Medios de Pago';
+        PRINT 'Filas insertadas: ' + CAST(@FilasInsertadas AS NVARCHAR(10));
+        PRINT 'Filas actualizadas: ' + CAST(@FilasActualizadas AS NVARCHAR(10));
+        PRINT 'Filas omitidas: ' + CAST(@FilasOmitidas AS NVARCHAR(10));
+        
+        DROP TABLE #TempAccionMerge;
+        DROP TABLE #TempMediosPago;
+
+    END TRY
+    BEGIN CATCH
+        PRINT 'Error al insertar o actualizar medios de pago: ' + ERROR_MESSAGE();
+        IF OBJECT_ID('tempdb..#TempMediosPago') IS NOT NULL
+            DROP TABLE #TempMediosPago;
+        IF OBJECT_ID('tempdb..#TempAccionMerge') IS NOT NULL
+            DROP TABLE #TempAccionMerge;
+    END CATCH;
+END;
+GO
+
+---------------------------------------------------
