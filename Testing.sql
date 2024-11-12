@@ -6,7 +6,7 @@ USE Com5600G09;
 
 -- Insertar sucursales
 
-EXEC ddbba.InsertarSucursales @Ruta = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Informacion_complementaria.xlsx';
+EXEC ddbba.InsertarSucursales @Ruta = 'Informacion_complementaria.xlsx';
 
 -- ABM sucursales
 
@@ -55,7 +55,7 @@ EXEC ddbba.EliminarCargo @Id = 4
 
 -- Insertar empleados
 
-EXEC ddbba.InsertarEmpleados @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Informacion_complementaria.xlsx';
+EXEC ddbba.InsertarEmpleados @RutaArchivo = 'Informacion_complementaria.xlsx';
 
 -- ABM empleados
 
@@ -96,7 +96,7 @@ EXEC ddbba.EliminarEmpleado @Legajo = 12345;
 
 -- Insertar Medios de pago
 
-EXEC ddbba.InsertarMediosDePago @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Informacion_complementaria.xlsx';
+EXEC ddbba.InsertarMediosDePago @RutaArchivo = 'Informacion_complementaria.xlsx';
 
 -- ABM Medio de pago
 
@@ -115,11 +115,11 @@ EXEC ddbba.EliminarMedioDePago @Nombre = 'Casheable'
 
 -- Insertar Productos
 
-EXEC ddbba.InsertarCatalogoEnProducto @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Productos\catalogo.csv';
+EXEC ddbba.InsertarCatalogoEnProducto @RutaArchivo = 'catalogo.csv';
 
-EXEC ddbba.InsertarElectronicosEnProducto @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Productos\Electronic accessories.xlsx';
+EXEC ddbba.InsertarElectronicosEnProducto @RutaArchivo = 'Electronic accessories.xlsx';
 
-EXEC ddbba.InsertarImportadosEnProducto @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Productos\Productos_importados.xlsx';
+EXEC ddbba.InsertarImportadosEnProducto @RutaArchivo = 'Productos_importados.xlsx';
 
 -- ABM Producto
 
