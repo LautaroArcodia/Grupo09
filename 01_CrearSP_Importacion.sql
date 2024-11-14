@@ -35,7 +35,7 @@ GO
 -- Inicio creacion SP insercion masiva en tabla Sucursal
 --==========================================================
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarSucursales
+CREATE OR ALTER PROCEDURE administracion.InsertarSucursales
     @Ruta NVARCHAR(255)
 AS
 BEGIN
@@ -59,18 +59,18 @@ BEGIN
     DECLARE @TotalSucursales INT;
     SET @TotalSucursales = (SELECT COUNT(*) FROM #SucursalesSinDuplicados);
 
-    INSERT INTO ddbba.Sucursal (Nombre, Ciudad, Direccion, Horario, Telefono, PuntoDeVenta)
+    INSERT INTO administracion.Sucursal (Nombre, Ciudad, Direccion, Horario, Telefono, PuntoDeVenta)
     SELECT 
         T.Nombre, 
         T.Ciudad, 
         T.Direccion, 
         T.Horario, 
         T.Telefono,
-        NEXT VALUE FOR ddbba.Seq_PuntoDeVenta
+        NEXT VALUE FOR administracion.Seq_PuntoDeVenta
     FROM #SucursalesSinDuplicados AS T
     WHERE NOT EXISTS (
         SELECT 1 
-        FROM ddbba.Sucursal AS S 
+        FROM administracion.Sucursal AS S 
         WHERE S.Nombre = T.Nombre AND S.Direccion = T.Direccion
     );
 
@@ -101,7 +101,7 @@ GO
 -- Inicio creacion SP insercion masiva en tabla Empleado
 --==========================================================
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarEmpleados
+CREATE OR ALTER PROCEDURE administracion.InsertarEmpleados
     @RutaArchivo NVARCHAR(255)
 AS
 BEGIN
@@ -153,7 +153,7 @@ BEGIN
         );
 
         -- Usar MERGE para insertar o actualizar empleados
-        MERGE INTO ddbba.Empleado AS E
+        MERGE INTO administracion.Empleado AS E
         USING (
             SELECT 
                 T.Legajo, 
@@ -164,12 +164,12 @@ BEGIN
                 T.EmailPersonal,
                 T.EmailEmpresa,
                 T.Cuil,
-                (SELECT C.Id
-                 FROM ddbba.Cargo AS C
+                (SELECT C.ID
+                 FROM administracion.Cargo AS C
                  WHERE C.Puesto = T.Cargo) AS CargoId,
                 T.Turno,
                 (SELECT S.ID
-                 FROM ddbba.Sucursal AS S
+                 FROM administracion.Sucursal AS S
                  WHERE S.Ciudad = T.SucursalCiudad) AS SucursalId
             FROM #TempEmpleados AS T
             WHERE T.Legajo IS NOT NULL
@@ -237,7 +237,7 @@ GO
 -- Inicio creacion SP insercion masiva en tabla MedioDePago
 --==========================================================
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarMediosDePago
+CREATE OR ALTER PROCEDURE administracion.InsertarMediosDePago
     @RutaArchivo NVARCHAR(255)
 AS
 BEGIN
@@ -270,7 +270,7 @@ BEGIN
             Action NVARCHAR(10)
         );
 
-        MERGE INTO ddbba.MedioDePago AS MP
+        MERGE INTO administracion.MedioDePago AS MP
         USING (
             SELECT Nombre, Descripcion FROM #TempMediosPago
         ) AS Temp
@@ -317,7 +317,7 @@ GO
 
 -- Insercion Catalogo.csv
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarCatalogoEnProducto
+CREATE OR ALTER PROCEDURE administracion.InsertarCatalogoEnProducto
     @RutaArchivo NVARCHAR(255)
 AS
 BEGIN
@@ -372,7 +372,7 @@ BEGIN
             Action NVARCHAR(10)
         );
 
-        MERGE INTO ddbba.Producto AS P
+        MERGE INTO administracion.Producto AS P
         USING (
             SELECT
                 name AS Descripcion, 
@@ -431,7 +431,7 @@ GO
 
 -- Insercion Electronic accesories.xlxs
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarElectronicosEnProducto
+CREATE OR ALTER PROCEDURE administracion.InsertarElectronicosEnProducto
     @RutaArchivo NVARCHAR(255)
 AS
 BEGIN
@@ -462,7 +462,7 @@ BEGIN
             Action NVARCHAR(10)
         );
 
-        MERGE INTO ddbba.Producto AS P
+        MERGE INTO administracion.Producto AS P
         USING (
             SELECT
                 Producto AS Descripcion, 
@@ -519,7 +519,7 @@ GO
 
 -- Insercion Productos_Importados.xlxs
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarImportadosEnProducto
+CREATE OR ALTER PROCEDURE administracion.InsertarImportadosEnProducto
     @RutaArchivo NVARCHAR(255)
 AS
 BEGIN
@@ -554,7 +554,7 @@ BEGIN
             Action NVARCHAR(10)
         );
 
-        MERGE INTO ddbba.Producto AS P
+        MERGE INTO administracion.Producto AS P
         USING (
             SELECT
                 NombreProducto AS Descripcion, 
@@ -583,7 +583,7 @@ BEGIN
 		
         WHEN NOT MATCHED THEN
             INSERT (Descripcion, Categoria, Linea, Proveedor, CantPorUnidad, Precio, PrecioRef, Moneda, UnidadRef)
-            VALUES (Temp.Descripcion, Temp.Categoria, NULL, NULL, NULL, Temp.Precio, Temp.PrecioRef, Temp.Moneda, Temp.UnidadRef)
+            VALUES (Temp.Descripcion, Temp.Categoria, NULL, Temp.Proveedor, Temp.CantPorUnidad, Temp.Precio, Temp.PrecioRef, Temp.Moneda, Temp.UnidadRef)
         
 		OUTPUT $action INTO #TempAccionMerge;
 
@@ -613,4 +613,77 @@ GO
 
 --==========================================================
 -- Fin creacion SP insercion masiva en tabla Producto
+--==========================================================
+--==========================================================
+-- Inicio creacion SP actualizar Linea en tabla Producto
+--==========================================================
+	
+CREATE OR ALTER PROCEDURE administracion.ActualizarLineasEnProducto
+    @RutaArchivo NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        DROP TABLE IF EXISTS #TempLineas;
+
+        CREATE TABLE #TempLineas (
+            Linea VARCHAR(50),
+            CategoriaProd VARCHAR(50)
+        );
+
+        DECLARE @sql NVARCHAR(MAX);
+        SET @sql = N'
+        INSERT INTO #TempLineas (Linea, CategoriaProd)
+        SELECT [Línea de producto] AS Linea, [Producto] AS CategoriaProd
+        FROM OPENROWSET(
+            ''Microsoft.ACE.OLEDB.12.0'', 
+            ''Excel 12.0;Database=' + @RutaArchivo + N';HDR=YES'',
+            ''SELECT [Línea de producto], [Producto] FROM [Clasificacion productos$]''
+        );';
+
+        EXEC sp_executesql @sql;
+
+        -- Tabla temporal para registrar las operaciones del MERGE
+        CREATE TABLE #TempAccionMerge (
+            Action NVARCHAR(10)
+        );
+
+        MERGE INTO administracion.Producto AS P
+        USING (
+            SELECT
+                Linea AS Linea,
+				CategoriaProd
+            FROM #TempLineas
+        ) AS Temp
+        ON P.Categoria = Temp.CategoriaProd
+
+        WHEN MATCHED
+            THEN UPDATE SET
+                P.Linea = Temp.Linea
+        
+		OUTPUT $action INTO #TempAccionMerge;
+
+        -- Contar filas actualizadas
+        DECLARE @FilasActualizadas INT = (SELECT COUNT(*) FROM #TempAccionMerge WHERE Action = 'UPDATE');
+
+        DROP TABLE #TempLineas;
+        DROP TABLE #TempAccionMerge;
+
+        PRINT 'Proceso completado para Informacion_complementaria.xlxs actualizando lineas';
+        PRINT 'Filas actualizadas: ' + CAST(@FilasActualizadas AS NVARCHAR(10));
+
+    END TRY
+    BEGIN CATCH
+        PRINT 'Error al actualizar lineas de productos: ' + ERROR_MESSAGE();
+        IF OBJECT_ID('tempdb..#TempLineas') IS NOT NULL
+            DROP TABLE #TempLineas;
+        IF OBJECT_ID('tempdb..#TempAccionMerge') IS NOT NULL
+            DROP TABLE #TempAccionMerge;
+    END CATCH;
+END;
+GO
+
+--==========================================================
+-- Fin creacion SP actualizar Linea en tabla Producto
 --==========================================================

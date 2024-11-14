@@ -60,17 +60,25 @@ GO
 
 IF EXISTS (SELECT * 
 			FROM INFORMATION_SCHEMA.TABLES 
-			WHERE TABLE_SCHEMA = 'ddbba')
-	DROP SCHEMA ddbba;
+			WHERE TABLE_SCHEMA = 'administracion')
+	DROP SCHEMA administracion;
+GO
+
+CREATE SCHEMA administracion;
+GO
+
+IF EXISTS (SELECT * 
+			FROM INFORMATION_SCHEMA.TABLES 
+			WHERE TABLE_SCHEMA = 'ventas')
+	DROP SCHEMA ventas;
+GO
+
+CREATE SCHEMA ventas;
 GO
 
 --=================================================================
 -- Fin creacion schemas
 --=================================================================
-
-CREATE SCHEMA ddbba;
-GO
-
 --=================================================================
 -- Inicio creacion tablas
 --=================================================================
@@ -79,13 +87,13 @@ GO
 
 IF EXISTS (SELECT * 
 			FROM INFORMATION_SCHEMA.TABLES 
-			WHERE TABLE_SCHEMA = 'ddbba'
+			WHERE TABLE_SCHEMA = 'administracion'
 			AND TABLE_NAME = 'Sucursal')
-	DROP TABLE ddbba.Sucursal;
+	DROP TABLE administracion.Sucursal;
 GO
 
 BEGIN
-	CREATE TABLE ddbba.Sucursal (
+	CREATE TABLE administracion.Sucursal (
 		Id INT PRIMARY KEY IDENTITY,
 		Nombre VARCHAR(50) UNIQUE,
 		Ciudad VARCHAR(50),
@@ -102,13 +110,13 @@ GO
 
 IF EXISTS (SELECT * 
 			FROM INFORMATION_SCHEMA.TABLES 
-			WHERE TABLE_SCHEMA = 'ddbba'
+			WHERE TABLE_SCHEMA = 'administracion'
 			AND TABLE_NAME = 'Cargo')
-	DROP TABLE ddbba.Cargo;
+	DROP TABLE administracion.Cargo;
 GO
 
 BEGIN
-	CREATE TABLE ddbba.Cargo (
+	CREATE TABLE administracion.Cargo (
 		Id INT PRIMARY KEY IDENTITY,
 		Puesto VARCHAR(30) UNIQUE,
 	)
@@ -120,13 +128,13 @@ GO
 
 IF EXISTS (SELECT * 
 			FROM INFORMATION_SCHEMA.TABLES 
-			WHERE TABLE_SCHEMA = 'ddbba'
+			WHERE TABLE_SCHEMA = 'administracion'
 			AND TABLE_NAME = 'Empleado')
-	DROP TABLE ddbba.Empleado;
+	DROP TABLE administracion.Empleado;
 GO
 
 BEGIN
-	CREATE TABLE ddbba.Empleado (
+	CREATE TABLE administracion.Empleado (
 		Id INT PRIMARY KEY IDENTITY,
 		Legajo INT UNIQUE NOT NULL,
 		Nombre VARCHAR(50),
@@ -142,8 +150,8 @@ BEGIN
 		Activo BIT DEFAULT 1,
 		FechaIngreso DATETIME DEFAULT GETDATE(),
 		FechaBaja DATETIME,
-		CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES ddbba.Sucursal(Id),
-		CONSTRAINT FK_Cargo FOREIGN KEY (CargoID) REFERENCES ddbba.Cargo(Id)
+		CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES administracion.Sucursal(Id),
+		CONSTRAINT FK_Cargo FOREIGN KEY (CargoID) REFERENCES administracion.Cargo(Id)
 	)
 END
 GO
@@ -153,13 +161,13 @@ GO
 
 IF EXISTS (SELECT * 
 			FROM INFORMATION_SCHEMA.TABLES 
-			WHERE TABLE_SCHEMA = 'ddbba'
+			WHERE TABLE_SCHEMA = 'administracion'
 			AND TABLE_NAME = 'MedioDePago')
-	DROP TABLE ddbba.MedioDePago;
+	DROP TABLE administracion.MedioDePago;
 GO
 
 BEGIN
-	CREATE TABLE ddbba.MedioDePago (
+	CREATE TABLE administracion.MedioDePago (
 		Id INT PRIMARY KEY IDENTITY,
 		Nombre VARCHAR(50) NOT NULL,
 		Descripcion VARCHAR(100)
@@ -172,13 +180,13 @@ GO
 
 IF EXISTS (SELECT * 
 			FROM INFORMATION_SCHEMA.TABLES 
-			WHERE TABLE_SCHEMA = 'ddbba'
+			WHERE TABLE_SCHEMA = 'administracion'
 			AND TABLE_NAME = 'Producto')
-	DROP TABLE ddbba.Producto;
+	DROP TABLE administracion.Producto;
 GO
 
 BEGIN
-	CREATE TABLE ddbba.Producto (
+	CREATE TABLE administracion.Producto (
 		Id INT PRIMARY KEY IDENTITY,
 		CodProducto AS CONVERT(VARCHAR(40), HASHBYTES('SHA1', ISNULL(Descripcion, '') + ISNULL(Categoria, '')), 2) PERSISTED UNIQUE NOT NULL,
 		Descripcion VARCHAR(100) NOT NULL,
@@ -200,13 +208,13 @@ GO
 
 IF EXISTS (SELECT * 
 			FROM INFORMATION_SCHEMA.TABLES 
-			WHERE TABLE_SCHEMA = 'ddbba'
+			WHERE TABLE_SCHEMA = 'ventas'
 			AND TABLE_NAME = 'Cliente')
-	DROP TABLE ddbba.Cliente;
+	DROP TABLE ventas.Cliente;
 GO
 
 BEGIN
-	CREATE TABLE ddbba.Cliente (
+	CREATE TABLE ventas.Cliente (
 		Id INT PRIMARY KEY IDENTITY,
 		Dni CHAR(8) UNIQUE NOT NULL,
 		Nombre VARCHAR(30),
@@ -228,12 +236,12 @@ GO
 
 IF EXISTS (SELECT * 
 			FROM INFORMATION_SCHEMA.TABLES 
-			WHERE TABLE_SCHEMA = 'ddbba'
+			WHERE TABLE_SCHEMA = 'administracion'
 			AND TABLE_NAME = 'FacturaControl')
-	DROP TABLE ddbba.FacturaControl;
+	DROP TABLE administracion.FacturaControl;
 GO
 
-CREATE TABLE ddbba.FacturaControl (
+CREATE TABLE administracion.FacturaControl (
     SucursalID INT,
     TipoFactura CHAR(1),
     Anio INT,
@@ -248,12 +256,12 @@ GO
 
 IF EXISTS (SELECT * 
            FROM INFORMATION_SCHEMA.TABLES 
-           WHERE TABLE_SCHEMA = 'ddbba' 
+           WHERE TABLE_SCHEMA = 'ventas' 
            AND TABLE_NAME = 'Venta')
-    DROP TABLE ddbba.Venta;
+    DROP TABLE ventas.Venta;
 GO
 
-CREATE TABLE ddbba.Venta (
+CREATE TABLE ventas.Venta (
     Id INT PRIMARY KEY IDENTITY,
     FacturaId VARCHAR(40) NULL,  -- FacturaId puede ser NULL hasta confirmar la venta
     TipoFactura CHAR(1) NOT NULL CHECK (TipoFactura IN ('A', 'B', 'C')),
@@ -266,15 +274,15 @@ CREATE TABLE ddbba.Venta (
     IdentificadorPago VARCHAR(30),
     EstadoVenta VARCHAR(20) DEFAULT 'Pendiente',
     EstadoPago VARCHAR(20) DEFAULT 'Pendiente',
-    CONSTRAINT FK_Venta_MedioPago FOREIGN KEY (MedioPagoID) REFERENCES ddbba.MedioDePago(Id),
-    CONSTRAINT FK_Venta_Empleado FOREIGN KEY (EmpleadoID) REFERENCES ddbba.Empleado(Legajo),
-    CONSTRAINT FK_Venta_Cliente FOREIGN KEY (ClienteID) REFERENCES ddbba.Cliente(Id),
-    CONSTRAINT FK_Venta_Sucursal FOREIGN KEY (SucursalID) REFERENCES ddbba.Sucursal(Id)
+    CONSTRAINT FK_Venta_MedioPago FOREIGN KEY (MedioPagoID) REFERENCES administracion.MedioDePago(Id),
+    CONSTRAINT FK_Venta_Empleado FOREIGN KEY (EmpleadoID) REFERENCES administracion.Empleado(Legajo),
+    CONSTRAINT FK_Venta_Cliente FOREIGN KEY (ClienteID) REFERENCES ventas.Cliente(Id),
+    CONSTRAINT FK_Venta_Sucursal FOREIGN KEY (SucursalID) REFERENCES administracion.Sucursal(Id)
 );
 GO
 
 CREATE UNIQUE INDEX IDX_Venta_FacturaId_Unique
-ON ddbba.Venta (FacturaId)
+ON ventas.Venta (FacturaId)
 WHERE FacturaId IS NOT NULL;
 
 -- Fin creacion Venta
@@ -283,23 +291,49 @@ WHERE FacturaId IS NOT NULL;
 
 IF EXISTS (SELECT * 
            FROM INFORMATION_SCHEMA.TABLES 
-           WHERE TABLE_SCHEMA = 'ddbba' 
+           WHERE TABLE_SCHEMA = 'ventas' 
            AND TABLE_NAME = 'DetalleVenta')
-    DROP TABLE ddbba.DetalleVenta;
+    DROP TABLE ventas.DetalleVenta;
 GO
 
-CREATE TABLE ddbba.DetalleVenta (
+CREATE TABLE ventas.DetalleVenta (
     Id INT PRIMARY KEY IDENTITY,
     VentaId INT NOT NULL,
     CodProducto VARCHAR(40) NOT NULL,
     Cantidad INT NOT NULL,
     Precio DECIMAL(10,2),
-    CONSTRAINT FK_DetalleVenta_Venta FOREIGN KEY (VentaId) REFERENCES ddbba.Venta(Id),
-    CONSTRAINT FK_DetalleVenta_Producto FOREIGN KEY (CodProducto) REFERENCES ddbba.Producto(CodProducto)
+    CONSTRAINT FK_DetalleVenta_Venta FOREIGN KEY (VentaId) REFERENCES ventas.Venta(Id),
+    CONSTRAINT FK_DetalleVenta_Producto FOREIGN KEY (CodProducto) REFERENCES administracion.Producto(CodProducto)
 );
 GO
 
 -- Fin creacion DetalleVenta
+
+-- Inicio creacion NotaDeCredito
+
+IF EXISTS (SELECT * 
+           FROM INFORMATION_SCHEMA.TABLES 
+           WHERE TABLE_SCHEMA = 'administracion' 
+           AND TABLE_NAME = 'NotaDeCredito')
+    DROP TABLE administracion.NotaDeCredito;
+GO
+
+CREATE TABLE administracion.NotaDeCredito (
+    Id INT PRIMARY KEY IDENTITY,
+	VentaId INT NOT NULL,
+    FacturaId VARCHAR(40) NOT NULL,                    
+    TipoFactura CHAR(1) NOT NULL CHECK (TipoFactura IN ('A', 'B', 'C')),
+    Monto DECIMAL(10, 2) NOT NULL,                    
+    Fecha DATE NOT NULL,                           
+    EmpleadoID INT NOT NULL,                          
+    Estado VARCHAR(20) DEFAULT 'Pendiente',         
+    MotivoDevolucion VARCHAR(255) NULL,          
+    CONSTRAINT FK_NotaDeCredito_VentaId FOREIGN KEY (VentaId) REFERENCES ventas.Venta(Id),
+    CONSTRAINT FK_NotaDeCredito_Empleado FOREIGN KEY (EmpleadoID) REFERENCES administracion.Empleado(Legajo)
+);
+GO
+
+-- Fin creacion NotaDeCredito
 
 --=================================================================
 -- Fin creacion tablas
@@ -309,7 +343,7 @@ GO
 --================================================================
 
 -- Crear una secuencia para generar valores únicos de PuntoDeVenta
-CREATE SEQUENCE ddbba.Seq_PuntoDeVenta
+CREATE SEQUENCE administracion.Seq_PuntoDeVenta
     AS INT
     START WITH 0001
     INCREMENT BY 1;
@@ -317,7 +351,7 @@ GO
 
 -- Creacion SP insertar sucursal
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarSucursal
+CREATE OR ALTER PROCEDURE administracion.InsertarSucursal
     @Nombre VARCHAR(50),
     @Ciudad VARCHAR(50),
     @Direccion VARCHAR(100),
@@ -327,16 +361,16 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-	IF EXISTS (SELECT 1 FROM ddbba.Sucursal WHERE Nombre = @Nombre)
+	IF EXISTS (SELECT 1 FROM administracion.Sucursal WHERE Nombre = @Nombre)
     BEGIN
         PRINT 'Sucursal ya existente.';
         RETURN;
     END
 
     DECLARE @NuevoPuntoDeVenta INT;
-    SET @NuevoPuntoDeVenta = NEXT VALUE FOR ddbba.Seq_PuntoDeVenta;
+    SET @NuevoPuntoDeVenta = NEXT VALUE FOR administracion.Seq_PuntoDeVenta;
 
-    INSERT INTO ddbba.Sucursal (Nombre, Ciudad, Direccion, Horario, Telefono, PuntoDeVenta)
+    INSERT INTO administracion.Sucursal (Nombre, Ciudad, Direccion, Horario, Telefono, PuntoDeVenta)
     VALUES (@Nombre, @Ciudad, @Direccion, @Horario, @Telefono, @NuevoPuntoDeVenta);
 
     PRINT 'Sucursal insertada exitosamente con PuntoDeVenta ' + CAST(@NuevoPuntoDeVenta AS NVARCHAR(10));
@@ -345,7 +379,7 @@ GO
 
 -- Creacion SP modificar sucursal
 
-CREATE OR ALTER PROCEDURE ddbba.ModificarSucursal
+CREATE OR ALTER PROCEDURE administracion.ModificarSucursal
     @PuntoDeVenta INT,
     @Nombre VARCHAR(50),
     @Ciudad VARCHAR(50),
@@ -356,7 +390,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE ddbba.Sucursal
+    UPDATE administracion.Sucursal
     SET Nombre = @Nombre,
         Ciudad = @Ciudad,
         Direccion = @Direccion,
@@ -377,13 +411,13 @@ GO
 
 -- Creacion SP eliminar sucursal
 
-CREATE OR ALTER PROCEDURE ddbba.EliminarSucursal
+CREATE OR ALTER PROCEDURE administracion.EliminarSucursal
     @PuntoDeVenta INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DELETE FROM ddbba.Sucursal
+    DELETE FROM administracion.Sucursal
     WHERE PuntoDeVenta = @PuntoDeVenta;
 
     IF @@ROWCOUNT = 0
@@ -406,19 +440,19 @@ GO
 
 -- Creacion SP insertar cargo
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarCargo
+CREATE OR ALTER PROCEDURE administracion.InsertarCargo
     @Cargo VARCHAR(30)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-	IF EXISTS (SELECT 1 FROM ddbba.Cargo WHERE Puesto = @Cargo)
+	IF EXISTS (SELECT 1 FROM administracion.Cargo WHERE Puesto = @Cargo)
     BEGIN
         PRINT 'Cargo ya existente.';
         RETURN;
     END
 
-    INSERT INTO ddbba.Cargo(Puesto)
+    INSERT INTO administracion.Cargo(Puesto)
     VALUES (@Cargo);
 
     PRINT 'Cargo insertado exitosamente';
@@ -427,14 +461,14 @@ GO
 
 -- Creacion SP modificar cargo
 
-CREATE OR ALTER PROCEDURE ddbba.ModificarCargo
+CREATE OR ALTER PROCEDURE administracion.ModificarCargo
     @Id INT,
 	@Cargo VARCHAR(30)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE ddbba.Cargo
+    UPDATE administracion.Cargo
     SET Puesto = @Cargo
     WHERE Id = @Id;
 
@@ -451,13 +485,13 @@ GO
 
 -- Creacion SP eliminar cargo
 
-CREATE OR ALTER PROCEDURE ddbba.EliminarCargo
+CREATE OR ALTER PROCEDURE administracion.EliminarCargo
     @Id INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DELETE FROM ddbba.Cargo
+    DELETE FROM administracion.Cargo
     WHERE Id = @Id;
 
     IF @@ROWCOUNT = 0
@@ -480,7 +514,7 @@ GO
 
 -- Creacion insertar empleado
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarEmpleado
+CREATE OR ALTER PROCEDURE administracion.InsertarEmpleado
     @Legajo INT,
     @Nombre VARCHAR(50),
     @Apellido VARCHAR(50),
@@ -500,11 +534,11 @@ BEGIN
     DECLARE @SucursalID INT;
 
     SELECT @CargoID = Id
-    FROM ddbba.Cargo
+    FROM administracion.Cargo
     WHERE Puesto = @Cargo;
 
     SELECT @SucursalID = Id
-    FROM ddbba.Sucursal
+    FROM administracion.Sucursal
     WHERE Ciudad = @Sucursal;
 
     IF @CargoID IS NULL
@@ -519,13 +553,13 @@ BEGIN
         RETURN;
     END
 
-	IF EXISTS (SELECT 1 FROM ddbba.Empleado WHERE Legajo = @Legajo OR Dni = @Dni)
+	IF EXISTS (SELECT 1 FROM administracion.Empleado WHERE Legajo = @Legajo OR Dni = @Dni)
     BEGIN
         PRINT 'Empleado ya existente.';
         RETURN;
     END
 
-    INSERT INTO ddbba.Empleado (
+    INSERT INTO administracion.Empleado (
         Legajo, Nombre, Apellido, Dni, Direccion, 
         EmailPersonal, EmailEmpresa, Cuil, CargoID, 
         SucursalID, Turno
@@ -542,7 +576,7 @@ GO
 
 -- Creacion SP modificar empleado
 
-CREATE PROCEDURE ddbba.ModificarEmpleado
+CREATE PROCEDURE administracion.ModificarEmpleado
     @Legajo INT,
     @Nombre VARCHAR(50),
     @Apellido VARCHAR(50),
@@ -562,11 +596,11 @@ BEGIN
     DECLARE @SucursalID INT;
 
     SELECT @CargoID = Id
-    FROM ddbba.Cargo
+    FROM administracion.Cargo
     WHERE Puesto = @Cargo;
 
     SELECT @SucursalID = Id
-    FROM ddbba.Sucursal
+    FROM administracion.Sucursal
     WHERE Ciudad = @Sucursal;
 
     IF @CargoID IS NULL
@@ -581,13 +615,13 @@ BEGIN
         RETURN;
     END
 
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Empleado WHERE Legajo = @Legajo)
+    IF NOT EXISTS (SELECT 1 FROM administracion.Empleado WHERE Legajo = @Legajo)
     BEGIN
         PRINT 'Empleado no encontrado con el Legajo proporcionado.';
         RETURN;
     END
 
-    UPDATE ddbba.Empleado
+    UPDATE administracion.Empleado
     SET
         Nombre = @Nombre,
         Apellido = @Apellido,
@@ -607,19 +641,19 @@ GO
 
 -- Creacion SP eliminar empleado
 
-CREATE PROCEDURE ddbba.EliminarEmpleado
+CREATE PROCEDURE administracion.EliminarEmpleado
     @Legajo INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Empleado WHERE Legajo = @Legajo)
+    IF NOT EXISTS (SELECT 1 FROM administracion.Empleado WHERE Legajo = @Legajo)
     BEGIN
         PRINT 'Empleado no encontrado con el Legajo proporcionado.';
         RETURN;
     END
 
-    DELETE FROM ddbba.Empleado WHERE Legajo = @Legajo;
+    DELETE FROM administracion.Empleado WHERE Legajo = @Legajo;
 
     PRINT 'Empleado eliminado exitosamente.';
 END;
@@ -634,20 +668,20 @@ GO
 
 -- Creacion SP insertar MedioDePago
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarMedioDePago
+CREATE OR ALTER PROCEDURE administracion.InsertarMedioDePago
     @Nombre VARCHAR(30),
 	@Descripcion VARCHAR(30)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-	IF EXISTS (SELECT 1 FROM ddbba.MedioDePago WHERE Nombre = @Nombre)
+	IF EXISTS (SELECT 1 FROM administracion.MedioDePago WHERE Nombre = @Nombre)
     BEGIN
         PRINT 'El medio de pago ya existe.';
         RETURN;
     END
 
-    INSERT INTO ddbba.MedioDePago(Nombre, Descripcion)
+    INSERT INTO administracion.MedioDePago(Nombre, Descripcion)
     VALUES (@Nombre, @Descripcion);
 
     PRINT 'Medio de pago insertado exitosamente';
@@ -656,20 +690,20 @@ GO
 
 -- Creacion SP modificar MedioDePago
 
-CREATE OR ALTER PROCEDURE ddbba.ModificarMedioDePago
+CREATE OR ALTER PROCEDURE administracion.ModificarMedioDePago
     @Nombre VARCHAR(30),
 	@Descripcion VARCHAR(30)
 AS
 BEGIN
     SET NOCOUNT ON;
 	
-	IF NOT EXISTS (SELECT 1 FROM ddbba.MedioDePago WHERE Nombre = @Nombre)
+	IF NOT EXISTS (SELECT 1 FROM administracion.MedioDePago WHERE Nombre = @Nombre)
     BEGIN
         PRINT 'No se encontró el medio de pago especificado.';
         RETURN;
     END
 
-    UPDATE ddbba.MedioDePago
+    UPDATE administracion.MedioDePago
     SET Descripcion = @Descripcion
     WHERE Nombre = @Nombre;
 
@@ -679,19 +713,19 @@ GO
 
 -- Creacion SP eliminar MedioDePago
 
-CREATE OR ALTER PROCEDURE ddbba.EliminarMedioDePago
+CREATE OR ALTER PROCEDURE administracion.EliminarMedioDePago
     @Nombre VARCHAR(30)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-	IF NOT EXISTS (SELECT 1 FROM ddbba.MedioDePago WHERE Nombre = @Nombre)
+	IF NOT EXISTS (SELECT 1 FROM administracion.MedioDePago WHERE Nombre = @Nombre)
     BEGIN
         PRINT 'No se encontró el medio de pago especificado.';
         RETURN;
     END
 
-    DELETE FROM ddbba.MedioDePago
+    DELETE FROM administracion.MedioDePago
     WHERE Nombre = @Nombre;
     
     PRINT 'Medio de pago eliminado exitosamente.';
@@ -707,7 +741,7 @@ GO
 
 -- Creacion SP insertar Producto
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarProducto
+CREATE OR ALTER PROCEDURE administracion.InsertarProducto
     @Descripcion VARCHAR(100),
     @Categoria VARCHAR(50),
     @Linea VARCHAR(50) = NULL,
@@ -724,7 +758,7 @@ BEGIN
     DECLARE @CodProducto VARCHAR(40);
     SET @CodProducto = CONVERT(VARCHAR(40), HASHBYTES('SHA1', ISNULL(@Descripcion, '') + ISNULL(@Categoria, '')), 2);
 
-    IF EXISTS (SELECT 1 FROM ddbba.Producto WHERE CodProducto = @CodProducto)
+    IF EXISTS (SELECT 1 FROM administracion.Producto WHERE CodProducto = @CodProducto)
     BEGIN
         PRINT 'Producto ya existente en la base.';
         RETURN;
@@ -742,7 +776,7 @@ BEGIN
 	IF (@Moneda = '') SET @Moneda = NULL;
 	IF (@UnidadRef = '') SET @UnidadRef = NULL;
 
-    INSERT INTO ddbba.Producto (
+    INSERT INTO administracion.Producto (
         Descripcion, Categoria, Linea, Proveedor, CantPorUnidad,
         Precio, PrecioRef, Moneda, UnidadRef
     )
@@ -757,7 +791,7 @@ GO
 
 -- Creacion SP modificar Producto
 
-CREATE OR ALTER PROCEDURE ddbba.ModificarProducto
+CREATE OR ALTER PROCEDURE administracion.ModificarProducto
     @CodProducto VARCHAR(40),
     @Linea VARCHAR(50) = NULL,
     @Proveedor VARCHAR(50) = NULL,
@@ -770,7 +804,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-	IF NOT EXISTS (SELECT 1 FROM ddbba.Producto WHERE CodProducto = @CodProducto)
+	IF NOT EXISTS (SELECT 1 FROM administracion.Producto WHERE CodProducto = @CodProducto)
     BEGIN
         PRINT 'El codigo de producto proporsionado no existe en la base.';
         RETURN;
@@ -788,7 +822,7 @@ BEGIN
 	IF (@Moneda = '') SET @Moneda = NULL;
 	IF (@UnidadRef = '') SET @UnidadRef = NULL;
 
-    UPDATE ddbba.Producto
+    UPDATE administracion.Producto
     SET 
         Linea = @Linea,
         Proveedor = @Proveedor,
@@ -806,19 +840,19 @@ GO
 
 -- Creacion SP eliminar Producto
 
-CREATE OR ALTER PROCEDURE ddbba.EliminarProducto
+CREATE OR ALTER PROCEDURE administracion.EliminarProducto
     @CodProducto VARCHAR(40)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-	IF NOT EXISTS (SELECT 1 FROM ddbba.Producto WHERE CodProducto = @CodProducto)
+	IF NOT EXISTS (SELECT 1 FROM administracion.Producto WHERE CodProducto = @CodProducto)
     BEGIN
         PRINT 'Producto no existente en la base!';
         RETURN;
     END
 
-    DELETE FROM ddbba.Producto
+    DELETE FROM administracion.Producto
     WHERE CodProducto = @CodProducto;
 
     IF @@ROWCOUNT = 0
@@ -837,7 +871,7 @@ GO
 
 -- Creacion SP insertar Cliente
 
-CREATE OR ALTER PROCEDURE ddbba.InsertarCliente
+CREATE OR ALTER PROCEDURE ventas.InsertarCliente
     @Dni CHAR(8),
     @Nombre VARCHAR(30),
     @Apellido VARCHAR(30),
@@ -850,13 +884,13 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM ddbba.Cliente WHERE Dni = @Dni)
+    IF EXISTS (SELECT 1 FROM ventas.Cliente WHERE Dni = @Dni)
     BEGIN
         PRINT 'El cliente ya está registrado.';
         RETURN;
     END
 
-    INSERT INTO ddbba.Cliente (Dni, Nombre, Apellido, Genero, TipoCliente, CondicionIVA, Cuit, DomicilioFiscal)
+    INSERT INTO ventas.Cliente (Dni, Nombre, Apellido, Genero, TipoCliente, CondicionIVA, Cuit, DomicilioFiscal)
     VALUES (@Dni, @Nombre, @Apellido, @Genero, @TipoCliente, @CondicionIVA, @Cuit, @DomicilioFiscal);
 
     PRINT 'Cliente insertado con éxito.';
@@ -865,7 +899,7 @@ GO
 
 -- Creacion SP modificar Cliente
 
-CREATE OR ALTER PROCEDURE ddbba.ModificarCliente
+CREATE OR ALTER PROCEDURE ventas.ModificarCliente
     @Dni CHAR(8),
     @Nombre VARCHAR(30),
     @Apellido VARCHAR(30),
@@ -879,13 +913,13 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Verificar si el DNI existe en la base de datos
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Cliente WHERE Dni = @Dni)
+    IF NOT EXISTS (SELECT 1 FROM ventas.Cliente WHERE Dni = @Dni)
     BEGIN
         PRINT 'No se encontró un cliente con el DNI especificado.';
         RETURN;
     END
 
-    UPDATE ddbba.Cliente
+    UPDATE ventas.Cliente
     SET 
         Nombre = @Nombre,
         Apellido = @Apellido,
@@ -902,19 +936,19 @@ GO
 
 -- Creacion SP eliminar Cliente
 
-CREATE OR ALTER PROCEDURE ddbba.EliminarCliente
+CREATE OR ALTER PROCEDURE ventas.EliminarCliente
     @Dni CHAR(8)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Cliente WHERE Dni = @Dni)
+    IF NOT EXISTS (SELECT 1 FROM ventas.Cliente WHERE Dni = @Dni)
     BEGIN
         PRINT 'No se encontró un cliente con el DNI especificado.';
         RETURN;
     END
 
-    UPDATE ddbba.Cliente
+    UPDATE ventas.Cliente
     SET 
 		Activo = 0,
 		FechaBaja = GETDATE()
@@ -933,7 +967,7 @@ GO
 
 -- Procedimiento para generar número de factura
 
-CREATE OR ALTER PROCEDURE ddbba.GenerarNumeroFactura
+CREATE OR ALTER PROCEDURE administracion.GenerarNumeroFactura
     @SucursalID INT,
     @TipoFactura CHAR(1),
     @FacturaId VARCHAR(40) OUTPUT
@@ -944,14 +978,14 @@ BEGIN
 
     -- Intentar obtener el último número de factura para la combinación de sucursal, tipo de factura y año
     SELECT @NumeroFactura = NumeroFactura
-    FROM ddbba.FacturaControl
+    FROM administracion.FacturaControl
     WHERE SucursalID = @SucursalID AND TipoFactura = @TipoFactura AND Anio = @Anio;
 
     -- Si no existe un registro en la tabla de control, insertar el primer número de factura (1)
     IF @NumeroFactura IS NULL
     BEGIN
         -- Insertar el nuevo control de factura
-        INSERT INTO ddbba.FacturaControl (SucursalID, TipoFactura, Anio, NumeroFactura)
+        INSERT INTO administracion.FacturaControl (SucursalID, TipoFactura, Anio, NumeroFactura)
         VALUES (@SucursalID, @TipoFactura, @Anio, 1);
 
         -- Asignar el primer número de factura
@@ -960,7 +994,7 @@ BEGIN
     ELSE
     BEGIN
         -- Si ya existe, incrementar el número de factura
-        UPDATE ddbba.FacturaControl
+        UPDATE administracion.FacturaControl
         SET NumeroFactura = NumeroFactura + 1
         WHERE SucursalID = @SucursalID AND TipoFactura = @TipoFactura AND Anio = @Anio;
 
@@ -975,7 +1009,7 @@ END;
 GO
 
 -- Procedimiento para iniciar una venta
-CREATE OR ALTER PROCEDURE ddbba.IniciarVenta
+CREATE OR ALTER PROCEDURE ventas.IniciarVenta
     @EmpleadoID INT,
     @SucursalID INT,
     @ClienteID INT,
@@ -987,14 +1021,14 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Verificar que el cliente esté registrado
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Cliente WHERE Id = @ClienteID)
+    IF NOT EXISTS (SELECT 1 FROM ventas.Cliente WHERE Id = @ClienteID)
     BEGIN
         PRINT 'El cliente ingresado no está registrado.';
         RETURN;  -- Termina el procedimiento si el cliente no está registrado
     END
 
     -- Insertar nueva venta en estado pendiente (FacturaId será NULL al principio)
-    INSERT INTO ddbba.Venta (TipoFactura, ClienteID, Fecha, Hora, SucursalID, MedioPagoID, EmpleadoID, IdentificadorPago, FacturaId, EstadoVenta, EstadoPago)
+    INSERT INTO ventas.Venta (TipoFactura, ClienteID, Fecha, Hora, SucursalID, MedioPagoID, EmpleadoID, IdentificadorPago, FacturaId, EstadoVenta, EstadoPago)
     VALUES (@TipoFactura, @ClienteID, GETDATE(), CONVERT(TIME, GETDATE()), @SucursalID, @MedioPagoID, @EmpleadoID, NULL, NULL, 'Pendiente', 'Pendiente');
 
     -- Obtener el VentaID recién insertado
@@ -1013,7 +1047,7 @@ GO
 
 
 -- Procedimiento para agregar un producto a la venta
-CREATE OR ALTER PROCEDURE ddbba.AgregarDetalleVenta
+CREATE OR ALTER PROCEDURE ventas.AgregarDetalleVenta
     @VentaID INT,
     @CodProducto VARCHAR(40),
     @Cantidad INT
@@ -1022,22 +1056,22 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Verificar que el producto exista
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Producto WHERE CodProducto = @CodProducto)
+    IF NOT EXISTS (SELECT 1 FROM administracion.Producto WHERE CodProducto = @CodProducto)
     BEGIN
         PRINT 'El producto ingresado no existe.';
         RETURN;
     END
 
     -- Verificar que la venta esté en estado "Pendiente"
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Venta WHERE Id = @VentaID AND EstadoVenta = 'Pendiente')
+    IF NOT EXISTS (SELECT 1 FROM ventas.Venta WHERE Id = @VentaID AND EstadoVenta = 'Pendiente')
     BEGIN
         PRINT 'La venta no puede ser modificada porque ya ha sido cerrada o cancelada.';
         RETURN;
     END
 
-    DECLARE @Precio DECIMAL(10,2) = (SELECT Precio FROM ddbba.Producto WHERE CodProducto = @CodProducto);
+    DECLARE @Precio DECIMAL(10,2) = (SELECT Precio FROM administracion.Producto WHERE CodProducto = @CodProducto);
 
-    INSERT INTO ddbba.DetalleVenta (VentaId, CodProducto, Cantidad, Precio)
+    INSERT INTO ventas.DetalleVenta (VentaId, CodProducto, Cantidad, Precio)
     VALUES (@VentaID, @CodProducto, @Cantidad, @Precio);
 
     PRINT 'Producto agregado al detalle de venta.';
@@ -1045,7 +1079,7 @@ END;
 GO
 
 -- Procedimiento para confirmar el pago de una venta
-CREATE OR ALTER PROCEDURE ddbba.ConfirmarVenta
+CREATE OR ALTER PROCEDURE ventas.ConfirmarVenta
     @VentaID INT,
     @FacturaId VARCHAR(40) OUTPUT
 AS
@@ -1053,7 +1087,7 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Verificar que la venta esté en estado "Pendiente"
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Venta WHERE Id = @VentaID AND EstadoVenta = 'Pendiente')
+    IF NOT EXISTS (SELECT 1 FROM ventas.Venta WHERE Id = @VentaID AND EstadoVenta = 'Pendiente')
     BEGIN
         PRINT 'La venta no puede ser confirmada porque ya ha sido cerrada o cancelada.';
         RETURN;
@@ -1061,11 +1095,11 @@ BEGIN
 
     -- Generar el número de factura
     DECLARE @TipoFactura CHAR(1), @SucursalID INT;
-    SELECT @TipoFactura = TipoFactura, @SucursalID = SucursalID FROM ddbba.Venta WHERE Id = @VentaID;
-    EXEC ddbba.GenerarNumeroFactura @SucursalID, @TipoFactura, @FacturaId OUTPUT;
+    SELECT @TipoFactura = TipoFactura, @SucursalID = SucursalID FROM ventas.Venta WHERE Id = @VentaID;
+    EXEC administracion.GenerarNumeroFactura @SucursalID, @TipoFactura, @FacturaId OUTPUT;
 
     -- Actualizar la venta a estado "Confirmado" y asignar el FacturaId
-    UPDATE ddbba.Venta
+    UPDATE ventas.Venta
     SET FacturaId = @FacturaId, EstadoVenta = 'Confirmado'
     WHERE Id = @VentaID;
 
@@ -1074,21 +1108,21 @@ END;
 GO
 
 -- Procedimiento para confirmar el pago de la venta
-CREATE OR ALTER PROCEDURE ddbba.ConfirmarPago
+CREATE OR ALTER PROCEDURE ventas.ConfirmarPago
     @VentaID INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
     -- Verificar que la venta esté en estado "Pendiente"
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Venta WHERE Id = @VentaID AND EstadoVenta = 'Confirmado')
+    IF NOT EXISTS (SELECT 1 FROM ventas.Venta WHERE Id = @VentaID AND EstadoVenta = 'Confirmado')
     BEGIN
         PRINT 'El pago no puede realizarse porque la venta no esta confirmada.';
         RETURN;
     END
 
     -- Actualizar el estado de pago a "Pagado"
-    UPDATE ddbba.Venta
+    UPDATE ventas.Venta
     SET EstadoPago = 'Pagado'
     WHERE Id = @VentaID;
 
@@ -1097,7 +1131,7 @@ END;
 GO
 
 -- Procedimiento para cambiar el método de pago en caso de fallo
-CREATE OR ALTER PROCEDURE ddbba.CambiarMetodoPago
+CREATE OR ALTER PROCEDURE ventas.CambiarMetodoPago
     @VentaID INT,
     @NuevoMedioPagoID INT
 AS
@@ -1105,14 +1139,14 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Verificar que la venta esté en estado "Pendiente"
-    IF NOT EXISTS (SELECT 1 FROM ddbba.Venta WHERE Id = @VentaID AND EstadoPago = 'Pendiente')
+    IF NOT EXISTS (SELECT 1 FROM ventas.Venta WHERE Id = @VentaID AND EstadoPago = 'Pendiente')
     BEGIN
         PRINT 'El método de pago no puede ser cambiado porque la venta ya ha sido cerrada o cancelada.';
         RETURN;
     END
 
     -- Actualizar el método de pago
-    UPDATE ddbba.Venta
+    UPDATE ventas.Venta
     SET MedioPagoID = @NuevoMedioPagoID
     WHERE Id = @VentaID;
 
@@ -1121,19 +1155,19 @@ END;
 GO
 
 -- Procedimiento para cancelar la venta
-CREATE OR ALTER PROCEDURE ddbba.CancelarVenta
+CREATE OR ALTER PROCEDURE ventas.CancelarVenta
     @VentaID INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM ddbba.Venta WHERE Id = @VentaID AND EstadoPago = 'Pagado')
+    IF EXISTS (SELECT 1 FROM ventas.Venta WHERE Id = @VentaID AND EstadoPago = 'Pagado')
     BEGIN
         PRINT 'La venta no puede ser cancelada porque ya ha sido cerrada.';
         RETURN;
     END
 
-    UPDATE ddbba.Venta
+    UPDATE ventas.Venta
     SET EstadoVenta = 'Cancelado', EstadoPago = NULL
     WHERE Id = @VentaID;
 
@@ -1143,4 +1177,99 @@ GO
 
 --================================================================
 -- Fin creacion ABM tabla Venta
+--================================================================
+--================================================================
+-- Inicio creacion ABM tabla NotaDeCredito
+--================================================================
+
+-- Insertar NotaDeCredito
+
+CREATE OR ALTER PROCEDURE administracion.InsertarNotaDeCredito
+    @FacturaId VARCHAR(40),
+    @Monto DECIMAL(10,2),                 
+    @MotivoDevolucion VARCHAR(255) = NULL
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    DECLARE @VentaId INT;
+    DECLARE @EmpleadoID INT;
+
+    -- Obtener el VentaId y verificar que el EstadoVenta sea 'Pagado'
+    SELECT @VentaId = Id, @EmpleadoID = EmpleadoID
+    FROM ventas.Venta
+    WHERE FacturaId = @FacturaId AND EstadoPago = 'Pagado';
+
+    IF @VentaId IS NOT NULL
+    BEGIN
+        -- Insertar la nota de crédito asociada a la venta
+        INSERT INTO administracion.NotaDeCredito (VentaId, FacturaId, TipoFactura, Monto, Fecha, EmpleadoID, Estado, MotivoDevolucion)
+        VALUES (@VentaId, @FacturaId, 'A', @Monto, GETDATE(), @EmpleadoID, 'Pendiente', @MotivoDevolucion);
+
+        PRINT 'Nota de crédito creada exitosamente.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'No se puede crear la nota de crédito. La factura no existe o no está en estado "Pagado".';
+    END
+END
+GO
+
+-- Modificacion NotaDeCredito
+
+CREATE OR ALTER PROCEDURE administracion.ModificarNotaDeCredito
+    @NotaDeCreditoId INT,
+    @NuevoMonto DECIMAL(10,2),
+    @NuevoMotivoDevolucion VARCHAR(255)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    -- Verificar si la nota de crédito está en estado 'Pendiente'
+    IF EXISTS (SELECT 1 FROM administracion.NotaDeCredito WHERE Id = @NotaDeCreditoId AND Estado = 'Pendiente')
+    BEGIN
+        UPDATE administracion.NotaDeCredito
+        SET Monto = @NuevoMonto,
+            MotivoDevolucion = @NuevoMotivoDevolucion
+        WHERE Id = @NotaDeCreditoId;
+
+        PRINT 'Nota de crédito modificada exitosamente.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'La nota de crédito existe o no está en estado "Pendiente". No se puede modificar.';
+    END
+END
+GO
+
+-- Cancelar NotaDeCredito
+
+CREATE OR ALTER PROCEDURE administracion.CancelarNotaDeCredito
+    @NotaDeCreditoId INT
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    -- Verificar si existen ventas relacionadas con la nota de crédito y que tengan EstadoPago = 'Pagado'
+    IF EXISTS (
+        SELECT 1
+        FROM ventas.Venta
+        WHERE FacturaId IN (SELECT FacturaId FROM administracion.NotaDeCredito WHERE Id = @NotaDeCreditoId)
+        AND EstadoPago = 'Pagado'
+    )
+    BEGIN
+        UPDATE administracion.NotaDeCredito
+        SET Estado = 'Cancelada'
+        WHERE Id = @NotaDeCreditoId;
+        
+        PRINT 'La nota de crédito ha sido cancelada exitosamente.';
+    END
+    ELSE
+    BEGIN
+        PRINT 'No se puede cancelar la nota de crédito porque no existe o el pago no está efectuado.';
+    END
+END
+
+--================================================================
+-- Fin creacion ABM tabla NotaDeCredito
 --================================================================
