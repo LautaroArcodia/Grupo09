@@ -1,3 +1,6 @@
+USE Com5600G09;
+GO
+
 --====REPORTES EN XML====--
 
 --1. Reporte Mensual: Total Facturado por Días de la Semana
