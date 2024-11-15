@@ -49,6 +49,18 @@
           <AssociatedConnUserName />
           <FullPath>04_Testing.sql</FullPath>
         </FileNode>
+        <FileNode Name="Encriptacion.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:ASUS-UX410U-G:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>ASUS-UX410U-G</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Encriptacion.sql</FullPath>
+        </FileNode>
+        <FileNode Name="Reportes.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:ASUS-UX410U-G:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>ASUS-UX410U-G</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>Reportes.sql</FullPath>
+        </FileNode>
       </Items>
     </LogicalFolder>
     <LogicalFolder Name="Miscellaneous" Type="3" Sorted="true">
