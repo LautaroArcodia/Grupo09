@@ -61,3 +61,21 @@ GO
 --======================================================
 -- Fin creacion de Usuarios
 --======================================================
+
+--==========================================================
+-- Inicio ACLARACIONES
+--==========================================================
+
+-- Para realizar pruebas se pueden ejecutar de 2 maneras:
+
+-- Se puede ejecutar este codigo para simular en esta pestaña el usuario (u omitir este paso y ejecutar todo como admin)
+-- EXECUTE AS USER = 'Test1User';
+
+-- select current_user (Para probar que se haya asignado correctamente)
+
+-- O tambien se puede crear una nueva consulta a partir de loggearse con algun login creado (Ejemplo: Test1)
+-- Y copiar los EXEC que quiera ejecutar en dicha sesion
+
+--==========================================================
+-- Fin ACLARACIONES
+--==========================================================

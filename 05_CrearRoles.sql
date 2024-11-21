@@ -38,12 +38,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::ventas TO Administrador;
 GRANT EXECUTE ON SCHEMA::administracion TO Administrador;
 GRANT EXECUTE ON SCHEMA::ventas TO Administrador;
 
-
-GRANT EXECUTE ON administracion.InsertarCatalogoEnProducto TO Supervisor;
-GRANT EXECUTE ON administracion.InsertarElectronicosEnProducto TO Supervisor;
-GRANT EXECUTE ON administracion.InsertarImportadosEnProducto TO Supervisor;
-GRANT EXECUTE ON administracion.ActualizarLineasEnProducto TO Supervisor;
-
 --===============================================
 -- Fin creacion permisos rol Administrador
 --===============================================
@@ -51,22 +45,14 @@ GRANT EXECUTE ON administracion.ActualizarLineasEnProducto TO Supervisor;
 -- Inicio creacion permisos rol Supervisor
 --===============================================
 
--- Permisos de tabla para Supervisor (acceso a ventas y acceso limitado a administración)
-
 GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::ventas TO Supervisor;
 GRANT EXECUTE ON SCHEMA::ventas TO Supervisor;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON administracion.Producto TO Supervisor;
 GRANT SELECT, INSERT, UPDATE, DELETE ON administracion.NotaDeCredito TO Supervisor;
 
+GRANT SELECT ON administracion.Empleado TO Supervisor;
 GRANT SELECT ON administracion.FacturaControl TO Supervisor;
-
--- Permisos de SP para Supervisor
-
---GRANT EXECUTE ON administracion.InsertarCatalogoEnProducto TO Supervisor;
---GRANT EXECUTE ON administracion.InsertarElectronicosEnProducto TO Supervisor;
---GRANT EXECUTE ON administracion.InsertarImportadosEnProducto TO Supervisor;
---GRANT EXECUTE ON administracion.ActualizarLineasEnProducto TO Supervisor;
 
 GRANT EXECUTE ON administracion.InsertarProducto TO Supervisor;
 GRANT EXECUTE ON administracion.ModificarProducto TO Supervisor;
@@ -83,14 +69,8 @@ GRANT EXECUTE ON administracion.CancelarNotaDeCredito TO Supervisor;
 -- Inicio creacion permisos rol Vendedor
 --===============================================
 
--- Permisos de tabla para Vendedor (acceso limitado a ventas)
-
 GRANT SELECT, INSERT ON ventas.Venta TO Vendedor;
 GRANT SELECT, INSERT ON ventas.DetalleVenta TO Vendedor;
-
--- Permisos de SP para vendedor
-
---DENY EXECUTE ON administracion.InsertarSucursales TO Vendedor;
 
 DENY SELECT, INSERT, UPDATE, DELETE ON SCHEMA::administracion TO Vendedor;
 DENY EXECUTE ON SCHEMA::administracion TO Vendedor;

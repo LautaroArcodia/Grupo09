@@ -19,7 +19,7 @@ cargados, incompletos, erróneos, etc., deberá contemplarlo y realizar las correc
 en el fuente SQL. (Sería una excepción si el archivo está malformado y no es posible 
 interpretarlo como JSON o CSV). 
 
-Fecha de entrega: 01/11/2024
+Fecha de entrega: 15/11/2024
 Numero de grupo: 9
 Nombre de la materia: Bases de Datos Aplicadas
 Alumnos:
