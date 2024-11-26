@@ -61,17 +61,17 @@
           <AssociatedConnUserName />
           <FullPath>06_CrearLogginUsuarios.sql</FullPath>
         </FileNode>
-        <FileNode Name="Encriptacion.sql">
+        <FileNode Name="07_Reportes.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:ASUS-UX410U-G:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>ASUS-UX410U-G</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>Encriptacion.sql</FullPath>
+          <FullPath>07_Reportes.sql</FullPath>
         </FileNode>
-        <FileNode Name="Reportes.sql">
+        <FileNode Name="08_Encriptacion.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:ASUS-UX410U-G:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>ASUS-UX410U-G</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>Reportes.sql</FullPath>
+          <FullPath>08_Encriptacion.sql</FullPath>
         </FileNode>
       </Items>
     </LogicalFolder>

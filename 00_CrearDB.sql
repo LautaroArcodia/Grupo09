@@ -99,8 +99,7 @@ BEGIN
 		Ciudad VARCHAR(50),
 		Direccion VARCHAR(100),
 		Horario VARCHAR(50),
-		Telefono CHAR(20),
-		PuntoDeVenta INT UNIQUE
+		Telefono CHAR(20)
 	)
 END
 GO
@@ -268,6 +267,7 @@ CREATE TABLE ventas.Venta (
     ClienteID INT,
     Fecha DATE NOT NULL,
     Hora TIME NOT NULL,
+	MontoTotal DECIMAL(10,2) DEFAULT 0,
     SucursalID INT,
     MedioPagoID INT NOT NULL,
     EmpleadoID INT NOT NULL,
@@ -323,7 +323,7 @@ CREATE TABLE administracion.NotaDeCredito (
 	VentaId INT NOT NULL,
     FacturaId VARCHAR(40) NOT NULL,                    
     TipoFactura CHAR(1) NOT NULL CHECK (TipoFactura IN ('A', 'B', 'C')),
-    Monto DECIMAL(10, 2) NOT NULL,                    
+    MontoTotal DECIMAL(10, 2) NOT NULL DEFAULT 0,                    
     Fecha DATE NOT NULL,                           
     EmpleadoID INT NOT NULL,                          
     Estado VARCHAR(20) DEFAULT 'Pendiente',         
@@ -334,6 +334,28 @@ CREATE TABLE administracion.NotaDeCredito (
 GO
 
 -- Fin creacion NotaDeCredito
+
+-- Inicio creacion DetalleNotaDeCredito
+
+IF EXISTS (SELECT * 
+           FROM INFORMATION_SCHEMA.TABLES 
+           WHERE TABLE_SCHEMA = 'administracion' 
+           AND TABLE_NAME = 'DetalleNotaDeCredito')
+    DROP TABLE administracion.DetalleNotaDeCredito;
+GO
+
+CREATE TABLE administracion.DetalleNotaDeCredito (
+    Id INT PRIMARY KEY IDENTITY,
+    NotaDeCreditoID INT NOT NULL,
+	CodProducto VARCHAR(40) NOT NULL,
+    Cantidad DECIMAL(10, 2) NOT NULL,
+    Monto DECIMAL(10, 2) NOT NULL,
+	CONSTRAINT FK_DetalleNotaDeCredito_NotaDeCreditoId FOREIGN KEY (NotaDeCreditoID) REFERENCES administracion.NotaDeCredito(Id),
+    CONSTRAINT FK_DetalleNotaDeCredito_Productos FOREIGN KEY (CodProducto) REFERENCES administracion.Producto(CodProducto)
+);
+GO
+
+-- Fin creacion DetalleNotaDeCredito
 
 --=================================================================
 -- Fin creacion tablas

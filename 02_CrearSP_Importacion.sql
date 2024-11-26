@@ -59,14 +59,13 @@ BEGIN
     DECLARE @TotalSucursales INT;
     SET @TotalSucursales = (SELECT COUNT(*) FROM #SucursalesSinDuplicados);
 
-    INSERT INTO administracion.Sucursal (Nombre, Ciudad, Direccion, Horario, Telefono, PuntoDeVenta)
+    INSERT INTO administracion.Sucursal (Nombre, Ciudad, Direccion, Horario, Telefono)
     SELECT 
         T.Nombre, 
         T.Ciudad, 
         T.Direccion, 
         T.Horario, 
-        T.Telefono,
-        NEXT VALUE FOR administracion.Seq_PuntoDeVenta
+        T.Telefono
     FROM #SucursalesSinDuplicados AS T
     WHERE NOT EXISTS (
         SELECT 1 

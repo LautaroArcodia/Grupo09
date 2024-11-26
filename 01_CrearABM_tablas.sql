@@ -5,13 +5,6 @@ GO
 -- Inicio creacion ABM tabla Sucursal
 --================================================================
 
--- Crear una secuencia para generar valores únicos de PuntoDeVenta
-CREATE SEQUENCE administracion.Seq_PuntoDeVenta
-    AS INT
-    START WITH 0001
-    INCREMENT BY 1;
-GO
-
 -- Creacion SP insertar sucursal
 
 CREATE OR ALTER PROCEDURE administracion.InsertarSucursal
@@ -30,13 +23,12 @@ BEGIN
         RETURN;
     END
 
-    DECLARE @NuevoPuntoDeVenta INT;
-    SET @NuevoPuntoDeVenta = NEXT VALUE FOR administracion.Seq_PuntoDeVenta;
+    INSERT INTO administracion.Sucursal (Nombre, Ciudad, Direccion, Horario, Telefono)
+    VALUES (@Nombre, @Ciudad, @Direccion, @Horario, @Telefono);
 
-    INSERT INTO administracion.Sucursal (Nombre, Ciudad, Direccion, Horario, Telefono, PuntoDeVenta)
-    VALUES (@Nombre, @Ciudad, @Direccion, @Horario, @Telefono, @NuevoPuntoDeVenta);
+	DECLARE @NuevoId INT = SCOPE_IDENTITY();
 
-    PRINT 'Sucursal insertada exitosamente con PuntoDeVenta ' + CAST(@NuevoPuntoDeVenta AS NVARCHAR(10));
+    PRINT 'Sucursal insertada exitosamente con PuntoDeVenta ' + CAST(@NuevoId AS NVARCHAR(10));
 END;
 GO
 
@@ -59,7 +51,7 @@ BEGIN
         Direccion = @Direccion,
         Horario = @Horario,
         Telefono = @Telefono
-    WHERE PuntoDeVenta = @PuntoDeVenta;
+    WHERE Id = @PuntoDeVenta;
 
     IF @@ROWCOUNT = 0
     BEGIN
@@ -81,7 +73,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DELETE FROM administracion.Sucursal
-    WHERE PuntoDeVenta = @PuntoDeVenta;
+    WHERE Id = @PuntoDeVenta;
 
     IF @@ROWCOUNT = 0
     BEGIN
@@ -590,7 +582,9 @@ BEGIN
         TipoCliente = @TipoCliente,
         CondicionIVA = @CondicionIVA,
         Cuit = @Cuit,
-        DomicilioFiscal = @DomicilioFiscal
+        DomicilioFiscal = @DomicilioFiscal,
+		Activo = '1',
+		FechaBaja = NULL
     WHERE Dni = @Dni;
 
     PRINT 'Cliente modificado con éxito.';
@@ -737,6 +731,10 @@ BEGIN
     INSERT INTO ventas.DetalleVenta (VentaId, CodProducto, Cantidad, Precio)
     VALUES (@VentaID, @CodProducto, @Cantidad, @Precio);
 
+	UPDATE ventas.Venta
+	SET MontoTotal = ISNULL(MontoTotal, 0) + (@Precio * @Cantidad)
+	WHERE Id = @VentaID;
+
     PRINT 'Producto agregado al detalle de venta.';
 END;
 GO
@@ -786,7 +784,8 @@ BEGIN
 
     -- Actualizar el estado de pago a "Pagado"
     UPDATE ventas.Venta
-    SET EstadoPago = 'Pagado'
+    SET EstadoPago = 'Pagado',
+		IdentificadorPago = '-- '
     WHERE Id = @VentaID;
 
     PRINT 'Pago confirmado.';
@@ -847,65 +846,137 @@ GO
 
 -- Insertar NotaDeCredito
 
-CREATE OR ALTER PROCEDURE administracion.InsertarNotaDeCredito
+IF NOT EXISTS (SELECT * FROM sys.types WHERE is_table_type = 1 AND name = 'DetalleNotaDeCreditoVar' AND schema_id = SCHEMA_ID('administracion'))
+BEGIN
+    CREATE TYPE administracion.DetalleNotaDeCreditoVar AS TABLE
+    (
+        CodProducto VARCHAR(40),
+        Cantidad INT
+    );
+END;
+GO
+
+CREATE OR ALTER PROCEDURE administracion.InsertarNotaDeCreditoConDetalles
     @FacturaId VARCHAR(40),
-    @Monto DECIMAL(10,2),                 
+    @DetallesNotaCredito administracion.DetalleNotaDeCreditoVar READONLY,  -- Usar el tipo definido previamente
     @MotivoDevolucion VARCHAR(255) = NULL
 AS
 BEGIN
-	SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
+    -- Declaración de variables
     DECLARE @VentaId INT;
     DECLARE @EmpleadoID INT;
+    DECLARE @MontoFactura DECIMAL(10, 2);
+    DECLARE @MontoNotaDeCredito DECIMAL(10, 2) = 0;  -- Inicializar a 0 en caso de no haber detalles
+    DECLARE @TipoFactura CHAR(1);
+    DECLARE @SumaNotasCredito DECIMAL(10, 2) = 0; -- Variable para la suma de notas de crédito de la misma venta
 
-    -- Obtener el VentaId y verificar que el EstadoVenta sea 'Pagado'
-    SELECT @VentaId = Id, @EmpleadoID = EmpleadoID
-    FROM ventas.Venta
-    WHERE FacturaId = @FacturaId AND EstadoPago = 'Pagado';
+    -- Iniciar la transacción
+    BEGIN TRANSACTION;
 
-    IF @VentaId IS NOT NULL
-    BEGIN
-        -- Insertar la nota de crédito asociada a la venta
-        INSERT INTO administracion.NotaDeCredito (VentaId, FacturaId, TipoFactura, Monto, Fecha, EmpleadoID, Estado, MotivoDevolucion)
-        VALUES (@VentaId, @FacturaId, 'A', @Monto, GETDATE(), @EmpleadoID, 'Pendiente', @MotivoDevolucion);
+    BEGIN TRY
+        -- Verificar si la factura está pagada y obtener datos de la venta
+        SELECT 
+            @VentaId = Id, 
+            @EmpleadoID = EmpleadoID, 
+            @MontoFactura = MontoTotal,
+            @TipoFactura = TipoFactura
+        FROM ventas.Venta
+        WHERE FacturaId = @FacturaId AND EstadoPago = 'Pagado';
+
+        -- Verificar si la factura existe y está pagada
+        IF @VentaId IS NULL
+        BEGIN
+            RAISERROR('La factura no existe o no está en estado "Pagado".', 16, 1);
+            RETURN;
+        END
+
+        -- Verificación de existencia de productos
+        IF EXISTS (SELECT 1 FROM @DetallesNotaCredito AS DNC 
+                   WHERE NOT EXISTS (SELECT 1 FROM administracion.Producto AS P WHERE P.CodProducto = DNC.CodProducto))
+        BEGIN
+            RAISERROR('Algunos productos en los detalles no existen en la tabla Producto.', 16, 1);
+            RETURN;
+        END
+
+        -- Si hay detalles de productos, calcular el monto de la nota de crédito basado en esos detalles
+        IF EXISTS (SELECT 1 FROM @DetallesNotaCredito)
+        BEGIN
+            -- Calcular el monto de la nota de crédito basado en los detalles
+            SELECT @MontoNotaDeCredito = SUM(DNC.Cantidad * P.Precio)
+            FROM @DetallesNotaCredito AS DNC
+            INNER JOIN administracion.Producto AS P 
+                ON DNC.CodProducto = P.CodProducto;
+        END
+        ELSE
+        BEGIN
+            -- Si no hay detalles, tomar el monto total de la factura
+            SET @MontoNotaDeCredito = @MontoFactura;
+        END
+
+        -- Verificar que la suma de todas las notas de crédito para la misma venta no exceda el monto total de la venta
+        SELECT @SumaNotasCredito = SUM(MontoTotal) 
+        FROM administracion.NotaDeCredito 
+        WHERE VentaId = @VentaId AND Estado <> 'Cancelada';
+
+        IF (@SumaNotasCredito + @MontoNotaDeCredito) > @MontoFactura
+        BEGIN
+            RAISERROR('La suma de las notas de crédito para esta venta excede el monto total de la factura.', 16, 1);
+            RETURN;
+        END
+
+        -- Insertar la nota de crédito
+        DECLARE @NotaDeCreditoId INT;
+
+        INSERT INTO administracion.NotaDeCredito (VentaId, FacturaId, TipoFactura, MontoTotal, Fecha, EmpleadoID, Estado, MotivoDevolucion)
+        VALUES (@VentaId, @FacturaId, @TipoFactura, @MontoNotaDeCredito, GETDATE(), @EmpleadoID, 'Concretada', ISNULL(@MotivoDevolucion, 'No especificado'));
+
+        SET @NotaDeCreditoId = SCOPE_IDENTITY(); -- Obtener el ID de la nota de crédito insertada
+
+        -- Insertar los detalles si existen
+        IF EXISTS (SELECT 1 FROM @DetallesNotaCredito)
+        BEGIN
+            -- Si hay productos especificados en los detalles, insertarlos
+            INSERT INTO administracion.DetalleNotaDeCredito (NotaDeCreditoID, CodProducto, Cantidad, Monto)
+            SELECT 
+                @NotaDeCreditoId, 
+                DNC.CodProducto, 
+                DNC.Cantidad, 
+                DNC.Cantidad * P.Precio
+            FROM @DetallesNotaCredito AS DNC
+            INNER JOIN administracion.Producto AS P 
+                ON DNC.CodProducto = P.CodProducto;
+        END
+        ELSE
+        BEGIN
+            -- Si no hay detalles, tomar los detalles de la venta original
+            INSERT INTO administracion.DetalleNotaDeCredito (NotaDeCreditoID, CodProducto, Cantidad, Monto)
+            SELECT 
+                @NotaDeCreditoId, 
+                DV.CodProducto, 
+                DV.Cantidad, 
+                DV.Cantidad * P.Precio
+            FROM ventas.DetalleVenta AS DV
+            INNER JOIN administracion.Producto AS P 
+                ON DV.CodProducto = P.CodProducto;
+        END
+
+        -- Commit de la transacción si todo es exitoso
+        COMMIT TRANSACTION;
 
         PRINT 'Nota de crédito creada exitosamente.';
-    END
-    ELSE
-    BEGIN
-        PRINT 'No se puede crear la nota de crédito. La factura no existe o no está en estado "Pagado".';
-    END
-END
+
+    END TRY
+    BEGIN CATCH
+        -- En caso de error, hacer rollback y mostrar el mensaje de error
+        ROLLBACK TRANSACTION;
+        PRINT 'Error al crear la nota de crédito: ' + ERROR_MESSAGE();
+    END CATCH
+END;
 GO
 
--- Modificacion NotaDeCredito
-
-CREATE OR ALTER PROCEDURE administracion.ModificarNotaDeCredito
-    @NotaDeCreditoId INT,
-    @NuevoMonto DECIMAL(10,2),
-    @NuevoMotivoDevolucion VARCHAR(255)
-AS
-BEGIN
-	SET NOCOUNT ON;
-
-    -- Verificar si la nota de crédito está en estado 'Pendiente'
-    IF EXISTS (SELECT 1 FROM administracion.NotaDeCredito WHERE Id = @NotaDeCreditoId AND Estado = 'Pendiente')
-    BEGIN
-        UPDATE administracion.NotaDeCredito
-        SET Monto = @NuevoMonto,
-            MotivoDevolucion = @NuevoMotivoDevolucion
-        WHERE Id = @NotaDeCreditoId;
-
-        PRINT 'Nota de crédito modificada exitosamente.';
-    END
-    ELSE
-    BEGIN
-        PRINT 'La nota de crédito existe o no está en estado "Pendiente". No se puede modificar.';
-    END
-END
-GO
-
--- Cancelar NotaDeCredito
+-- Cancelar Nota de credito
 
 CREATE OR ALTER PROCEDURE administracion.CancelarNotaDeCredito
     @NotaDeCreditoId INT
@@ -932,6 +1003,7 @@ BEGIN
         PRINT 'No se puede cancelar la nota de crédito porque no existe o el pago no está efectuado.';
     END
 END
+GO
 
 --================================================================
 -- Fin creacion ABM tabla NotaDeCredito

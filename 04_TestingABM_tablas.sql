@@ -13,14 +13,14 @@ EXEC administracion.InsertarSucursal
 							@Telefono = '44123578'
 
 EXEC administracion.ModificarSucursal
-							 @PuntoDeVenta = 8,
+							 @PuntoDeVenta = 4,
 							 @Nombre = 'Sucursal Modificada',
 							 @Ciudad = 'Ciudad Modificada',
 							 @Direccion = 'Direccion Modificada',
 							 @Horario = 'Lunes a Viernes 9:00-19:00',
 							 @Telefono = '98765432'
 
-EXEC administracion.EliminarSucursal @PuntoDeVenta = 8
+EXEC administracion.EliminarSucursal @PuntoDeVenta = 5
 
 --==========================================================
 -- Fin tests tabla Sucursal
@@ -127,7 +127,7 @@ EXEC ventas.InsertarCliente
     @Dni = '12345678',
     @Nombre = 'Juan',
     @Apellido = 'Perez',
-    @Genero = 'Masculino',
+    @Genero = 'M',
     @TipoCliente = 'Particular',
     @CondicionIVA = 'Consumidor Final',
     @Cuit = '20-123456789-0',
@@ -137,7 +137,7 @@ EXEC ventas.ModificarCliente
     @Dni = '12345678',
     @Nombre = 'Pedro',
     @Apellido = 'Gomez',
-    @Genero = 'Masculino',
+    @Genero = 'M',
     @TipoCliente = 'Empresa',
     @CondicionIVA = 'Responsable Inscripto',
     @Cuit = '20-987654321-0',
@@ -155,24 +155,24 @@ EXEC ventas.EliminarCliente @Dni = '12345678';
 DECLARE @VentaID INT;
 EXEC ventas.IniciarVenta 
     @EmpleadoID = 257020, 
-    @SucursalID = 5,
+    @SucursalID = 1,
     @ClienteID = 1,
     @MedioPagoID = 1,
     @TipoFactura = 'A',
     @VentaID = @VentaID OUTPUT;
 
-EXEC ventas.AgregarDetalleVenta @VentaID = 2, @CodProducto = '732D2678CD17CA12AECCD2F0768A692DD36AA975', @Cantidad = 2
-EXEC ventas.AgregarDetalleVenta @VentaID = 2, @CodProducto = 'EA7A618817ECF3DA0591417CE19D096A8EA429A8', @Cantidad = 3
-
+EXEC ventas.AgregarDetalleVenta @VentaID = 1, @CodProducto = '4A7F227C3B7866356A78E1DC8B1607A5309D0B01', @Cantidad = 2
+EXEC ventas.AgregarDetalleVenta @VentaID = 1, @CodProducto = 'EA7A618817ECF3DA0591417CE19D096A8EA429A8', @Cantidad = 5
+EXEC ventas.AgregarDetalleVenta @VentaID = 1, @CodProducto = '5E93CBD575233272EC6BF9A68C77A32D822CF1D9', @Cantidad = 5
 
 DECLARE @FacturaId VARCHAR(40);
-EXEC ventas.ConfirmarVenta @VentaID = 2, @FacturaId = @FacturaId OUTPUT;
+EXEC ventas.ConfirmarVenta @VentaID = 1, @FacturaId = @FacturaId OUTPUT;
 
-EXEC ventas.ConfirmarPago @VentaID = 2
+EXEC ventas.ConfirmarPago @VentaID = 1
 
-EXEC ventas.CambiarMetodoPago @VentaID = 2, @NuevoMedioPagoID = 3
+EXEC ventas.CambiarMetodoPago @VentaID = 1, @NuevoMedioPagoID = 3
 
-EXEC ventas.CancelarVenta @VentaID = 2
+EXEC ventas.CancelarVenta @VentaID = 1
 
 --==========================================================
 -- Fin tests Ventas
@@ -181,12 +181,30 @@ EXEC ventas.CancelarVenta @VentaID = 2
 -- Inicio tests Devoluciones (NotaDeCredito)
 --==========================================================
 
-EXEC administracion.InsertarNotaDeCredito '0005-A0000001',1000.00, 'Producto defectuoso';
+-- Insertar nota de credito con determinados productos
 
-EXEC administracion.ModificarNotaDeCredito 1, 1500.00, 'Cambio de opinión';
+DECLARE @Detalles administracion.DetalleNotaDeCreditoVar;
+INSERT INTO @Detalles (CodProducto, Cantidad)
+VALUES ('4A7F227C3B7866356A78E1DC8B1607A5309D0B01', 2),
+	   ('EA7A618817ECF3DA0591417CE19D096A8EA429A8', 1),
+	   ('5E93CBD575233272EC6BF9A68C77A32D822CF1D9', 3);
 
-EXEC administracion.CancelarNotaDeCredito 1;
+EXEC administracion.InsertarNotaDeCreditoConDetalles '0001-B0000001', @Detalles, NULL;
+
+-- Insertar nota de credito del total de la factura (Todos los productos)
+
+DECLARE @Detalles administracion.DetalleNotaDeCreditoVar;
+
+EXEC administracion.InsertarNotaDeCreditoConDetalles '0001-B0000001', @Detalles, 'Roto';
+
+-- Cancelar nota de credito
+
+EXEC administracion.CancelarNotaDeCredito 3;
 
 --==========================================================
 -- Fin tests Devoluciones (NotaDeCredito)
 --==========================================================
+
+
+
+

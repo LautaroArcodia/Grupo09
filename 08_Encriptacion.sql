@@ -7,13 +7,15 @@ GO
 CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'contraEncrip';
 CREATE CERTIFICATE CertificadoEmpleado WITH SUBJECT = 'Certificado para encriptar empleados';
 CREATE SYMMETRIC KEY ClaveEmpleado WITH ALGORITHM = AES_256 ENCRYPTION BY CERTIFICATE CertificadoEmpleado;
-
+GO
 --=================================================================================
 -- Cambia tamaño de columna Direccion porque no alcanzaba el tamaño para encriptar
 --=================================================================================
-ALTER TABLE administracion.Empleado
-ALTER COLUMN Direccion VARCHAR(MAX);
 
+ALTER TABLE administracion.Empleado ADD DireccionCifrada VARCHAR(MAX)
+GO
+ALTER TABLE administracion.Empleado ADD EmailPersonalCifrado VARCHAR(MAX)
+GO
 --=================================================================================
 -- Inicio encriptacion columnas 
 --=================================================================================
@@ -21,14 +23,27 @@ OPEN SYMMETRIC KEY ClaveEmpleado DECRYPTION BY CERTIFICATE CertificadoEmpleado;
 
 UPDATE administracion.Empleado
 SET 
-	Direccion = ENCRYPTBYKEY(KEY_GUID('ClaveEmpleado'), Direccion),
-    EmailPersonal = ENCRYPTBYKEY(KEY_GUID('ClaveEmpleado'), EmailPersonal)
+	DireccionCifrada = ENCRYPTBYKEY(KEY_GUID('ClaveEmpleado'), CAST(Direccion AS varchar(MAX))),
+    EmailPersonalCifrado = ENCRYPTBYKEY(KEY_GUID('ClaveEmpleado'), CAST(EmailPersonal AS varchar(MAX)));
 
 CLOSE SYMMETRIC KEY ClaveEmpleado;
 GO
 --=================================================================================
 -- Fin encriptacion columnas 
 --=================================================================================
+
+ALTER TABLE administracion.Empleado DROP COLUMN Direccion;
+GO
+ALTER TABLE administracion.Empleado DROP COLUMN EmailPersonal;
+GO
+
+--ALTER TABLE administracion.Empleado RENAME COLUMN DireccionCifrada to Direccion;
+EXEC sp_rename 'administracion.Empleado.DireccionCifrada',  'Direccion', 'COLUMN';
+GO
+EXEC sp_rename 'administracion.Empleado.EmailPersonalCifrado',  'EmailPersonal', 'COLUMN';
+GO
+
+
 --=================================================================================
 -- Creacion SP obtener empleado segun rol
 --=================================================================================
@@ -47,8 +62,16 @@ BEGIN
         Nombre,
         Apellido,
         Dni,
-        CONVERT(varchar, DECRYPTBYKEY(Direccion)) AS Direccion,
-        CONVERT(varchar, DECRYPTBYKEY(EmailPersonal)) AS EmailPersonal,
+        CASE 
+            WHEN DECRYPTBYKEY(Direccion) IS NOT NULL 
+                THEN CONVERT(varchar(100), DECRYPTBYKEY(Direccion))
+            ELSE 'Sin acceso'
+        END AS Direccion,
+        CASE 
+            WHEN DECRYPTBYKEY(EmailPersonal) IS NOT NULL 
+                THEN CONVERT(varchar(100), DECRYPTBYKEY(EmailPersonal))
+            ELSE 'Sin acceso'
+        END AS EmailPersonal,
         EmailEmpresa,
         Cuil,
         CargoID,
@@ -74,8 +97,16 @@ BEGIN
         Nombre,
         Apellido,
         Dni,
-        Direccion,
-        EmailPersonal,
+        CASE 
+            WHEN DECRYPTBYKEY(Direccion) IS NOT NULL 
+                THEN CONVERT(varchar(100), DECRYPTBYKEY(Direccion))
+            ELSE 'Sin acceso'
+        END AS Direccion,
+        CASE 
+            WHEN DECRYPTBYKEY(EmailPersonal) IS NOT NULL 
+                THEN CONVERT(varchar(100), DECRYPTBYKEY(EmailPersonal))
+            ELSE 'Sin acceso'
+        END AS EmailPersonal,
         EmailEmpresa,
         Cuil,
         CargoID,
