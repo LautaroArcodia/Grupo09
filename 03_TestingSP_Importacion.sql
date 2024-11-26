@@ -19,7 +19,7 @@ GO
 -- Inicio tests tabla Sucursal
 --==========================================================
 
-EXEC administracion.InsertarSucursales @Ruta = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Informacion_complementaria.xlsx';
+EXEC administracion.InsertarSucursales @Ruta = 'Informacion_complementaria.xlsx';
 GO
 --==========================================================
 -- Fin tests tabla Sucursal
@@ -28,7 +28,7 @@ GO
 -- Inicio tests tabla Empleado
 --==========================================================
 
-EXEC administracion.InsertarEmpleados @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Informacion_complementaria.xlsx';
+EXEC administracion.InsertarEmpleados @RutaArchivo = 'Informacion_complementaria.xlsx';
 GO
 --==========================================================
 -- Fin tests tabla Empleado
@@ -37,7 +37,7 @@ GO
 -- Inicio tests tabla MedioDePago
 --==========================================================
 
-EXEC administracion.InsertarMediosDePago @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Informacion_complementaria.xlsx';
+EXEC administracion.InsertarMediosDePago @RutaArchivo = 'Informacion_complementaria.xlsx';
 GO
 --==========================================================
 -- Fin tests tabla MedioDePago
@@ -48,15 +48,15 @@ GO
 
 -- Actualizar Productos
 
-EXEC administracion.InsertarCatalogoEnProducto @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Productos\catalogo.csv';
+EXEC administracion.InsertarCatalogoEnProducto @RutaArchivo = 'catalogo.csv';
 GO
-EXEC administracion.InsertarElectronicosEnProducto @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Productos\Electronic accessories.xlsx';
+EXEC administracion.InsertarElectronicosEnProducto @RutaArchivo = 'Electronic accessories.xlsx';
 GO
-EXEC administracion.InsertarImportadosEnProducto @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Productos\Productos_importados.xlsx';
+EXEC administracion.InsertarImportadosEnProducto @RutaArchivo = 'Productos_importados.xlsx';
 GO
 -- Actualizar Lineas de productos
 
-EXEC administracion.ActualizarLineasEnProducto @RutaArchivo = 'C:\Users\Lautaro\Desktop\UNLAM\BD_Aplicadas\TP\TP_integrador_Archivos\Informacion_complementaria.xlsx';
+EXEC administracion.ActualizarLineasEnProducto @RutaArchivo = 'Informacion_complementaria.xlsx';
 GO
 --==========================================================
 -- Fin tests tabla Producto
